@@ -1,0 +1,188 @@
+---
+title: "final_summary"
+author: "darshan"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# 🚲 Bike-Share Case Study
+
+## 📌 Business Task
+Analyze how annual members and casual riders use Divvy bike-share differently, and recommend strategies to convert casual riders into annual members.
+
+---
+
+## 📊 Data Sources
+- Divvy Bike-Share trip data (2019 Q1 and 2020 Q1)
+- Publicly available datasets
+
+---
+
+## 🧹 Data Cleaning & Preparation
+- Renamed inconsistent column names
+- Merged quarterly datasets into one dataframe
+- Removed duplicates and null values
+- Converted data types (ride_id, datetime)
+- Created new variables:
+  - `ride_length` = trip duration
+  - `day_of_week` = weekday name
+- Filtered out negative and extreme ride lengths
+
+---
+
+## 🔎 Analysis Summary
+- **Ride frequency**: Members ride more on weekdays; casuals more on weekends
+- **Ride duration**: Casuals ride longer (avg ~20 min), members shorter (avg ~12 min)
+- **Patterns**: Members = commuting use; Casuals = leisure/tourist use
+
+---
+
+## 📈 Visualizations
+- Bar chart: Number of rides by day of week (members vs casuals)
+- Line chart: Average ride length by day of week
+- Combined dashboard view
+
+(See `/visuals` folder)
+
+---
+
+## ✅ Recommendations
+1. **Targeted Marketing** → Membership promotions for weekend casual riders
+2. **Flexible Plans** → Tourist/weekend passes to attract casuals
+3. **Service Optimization** → Ensure more bike availability in weekend hotspots
+
+---
+
+## 🛠️ Tools Used
+- R (dplyr, ggplot2, patchwork)
+- GitHub for project hosting
+
+---
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r loading packages, echo=FALSE}
+library(ggplot2)
+library(patchwork)
+library(tidyverse)
+library(dplyr)
+library(here)
+
+
+```
+```{r}
+# Standardize column names
+q1_2019 <- read_csv(here("data", "aaa.csv")) %>% 
+
+  rename(ride_id = trip_id,
+         rideable_type = bikeid,
+         started_at = start_time,
+         ended_at = end_time,
+         member_casual = usertype)
+
+q1_2020 <- read_csv(here("data", "aaa2020.csv")) %>%
+  rename(ride_id = ride_id,
+         rideable_type = rideable_type,
+         started_at = started_at,
+         ended_at = ended_at,
+         member_casual = member_casual)
+         
+#check string types
+str(q1_2019)
+str(q1_2020)
+         
+# Convert types to character in both dataframes
+q1_2019 <- q1_2019 %>% mutate(ride_id = as.character(ride_id))
+q1_2020 <- q1_2020 %>% mutate(ride_id = as.character(ride_id))
+q1_2019 <- q1_2019 %>% mutate(rideable_type = as.character(rideable_type))
+q1_2020 <- q1_2020 %>% mutate(rideable_type = as.character(rideable_type))
+
+#deleting columns
+q1_2019 <- q1_2019 %>% select(-c(max_ride_length, average_ride_length, mode_of_days))
+q1_2020 <- q1_2020 %>% select(-c(max_ride_length, avg_ride_length))
+
+# Merge datasets
+all_trips <- bind_rows(q1_2019, q1_2020)
+
+# Average ride length
+mean(all_trips$ride_length, na.rm = TRUE)
+max(all_trips$ride_length, na.rm = TRUE)
+
+# Summary table
+summary_output <- all_trips %>%
+  group_by(member_casual, day_of_week) %>%
+  summarise(avg_ride_length = mean(ride_length, na.rm = TRUE),
+            number_of_rides = n(),
+            .groups = "drop")
+
+# Export to CSV
+write_csv(summary_output, "divvy_summary.csv")
+
+
+
+
+
+```
+
+```{r visualizations}
+library(ggplot2)
+
+# Bar chart: number of rides by day, split by member vs casual
+p1 <-ggplot(summary_output, aes(x = day_of_week, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Number of Rides by Day of Week",
+    subtitle = "Comparison between Members and Casual Riders",
+    x = "Day of the Week",
+    y = "Number of Rides",
+    fill = "Rider Type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+# Line chart: average ride length by weekday for members vs casuals
+p2 <-ggplot(summary_output, aes(x = day_of_week, y = avg_ride_length, color = member_casual, group = member_casual)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  labs(
+    title = "Average Ride Length by Day of Week",
+    subtitle = "Comparison between Members and Casual Riders",
+    x = "Day of the Week",
+    y = "Average Ride Length (minutes)",
+    color = "Rider Type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+#combining two plots in one frame or dashboard
+p1/p2
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
