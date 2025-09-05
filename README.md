@@ -1,4 +1,5 @@
 # 🚲 Bike-Share Case Study
+#[live link to view my report](https://thorboledarshan-coder.github.io/bike_share_case_study/)
 
 This case study analyzes usage patterns of casual riders vs. annual members in a bike-share program.
 
